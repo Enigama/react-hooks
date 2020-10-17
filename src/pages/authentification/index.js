@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, Redirect } from "react-router-dom";
 import useFetch from "../../hooks/useFetch";
+import useLocalStorage from "../../hooks/useLocalStorage";
 
 const Authentification = (props) => {
   const isLogin = props.match.path === "/login";
@@ -12,7 +13,11 @@ const Authentification = (props) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSuccessuFullSubmit, setIsSuccessuFullSubmit] = useState(false);
+
   const [{ isLoading, response, error }, doFetch] = useFetch(apiUrl);
+  const [token, setToken] = useLocalStorage("token");
+
+  console.log(token, "token");
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -29,9 +34,9 @@ const Authentification = (props) => {
 
   useEffect(() => {
     if (!response) return;
-    localStorage.setItem("token", response.user.token);
+    setToken(response.user.token);
     setIsSuccessuFullSubmit(true);
-  }, [response]);
+  }, [response, setToken]);
 
   if (isSuccessuFullSubmit) {
     return <Redirect to="/" />;
