@@ -1,37 +1,41 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import axios from "axios";
+import { Link, Redirect } from "react-router-dom";
+import useFetch from "../../hooks/useFetch";
 
-const Authentification = () => {
+const Authentification = (props) => {
+  const isLogin = props.match.path === "/login";
+  const pageTitle = isLogin ? "Sign in" : "Sing up";
+  const descriptionLink = isLogin ? "/register" : "/login";
+  const descriptionText = isLogin ? "Need an account" : "Have an account?";
+  const apiUrl = isLogin ? "/users/login" : "/users";
+  const [username, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSubmitteng, setIsSubmitting] = useState(false);
+  const [isSuccessuFullSubmit, setIsSuccessuFullSubmit] = useState(false);
+  const [{ isLoading, response, error }, doFetch] = useFetch(apiUrl);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("data", email, password);
-    setIsSubmitting(true);
+    const user = isLogin ? { email, password } : { email, password, username };
+
+    console.log(user, "before send");
+    doFetch({
+      method: "post",
+      data: {
+        user,
+      },
+    });
   };
 
   useEffect(() => {
-    if (!isSubmitteng) return;
+    if (!response) return;
+    localStorage.setItem("token", response.user.token);
+    setIsSuccessuFullSubmit(true);
+  }, [response]);
 
-    axios
-      .post("https://conduit.productionready.io/api/users/", {
-        user: {
-          email,
-          password,
-        },
-      })
-      .then((res) => {
-        console.log(res);
-        setIsSubmitting(false);
-      })
-      .catch((error) => {
-        console.log(error);
-        setIsSubmitting(false);
-      });
-  });
+  if (isSuccessuFullSubmit) {
+    return <Redirect to="/" />;
+  }
 
   return (
     <div>
@@ -39,13 +43,24 @@ const Authentification = () => {
         <div className="container page">
           <div className="row">
             <div className="col-md-6 offset-md-3 col-xs-12">
-              <h1 className="text-xs-center">Login</h1>
+              <h1 className="text-xs-center">{pageTitle}</h1>
               <p className="text-xs-center">
-                <Link to="register">Need an account?</Link>
+                <Link to={descriptionLink}>{descriptionText}</Link>
               </p>
 
               <form onSubmit={(e) => handleSubmit(e)}>
                 <fieldset>
+                  {!isLogin && (
+                    <fieldset className="form-group">
+                      <input
+                        type="text"
+                        className="form-control form-control-lg"
+                        placeholder="Username"
+                        value={username}
+                        onChange={(e) => setUserName(e.target.value)}
+                      />
+                    </fieldset>
+                  )}
                   <fieldset className="form-group">
                     <input
                       type="email"
@@ -67,9 +82,9 @@ const Authentification = () => {
                   <button
                     className="btn btn-lg btn-primary pull-xs-right"
                     type="submit"
-                    disabled={isSubmitteng}
+                    disabled={isLoading}
                   >
-                    Sign in
+                    {pageTitle}
                   </button>
                 </fieldset>
               </form>
